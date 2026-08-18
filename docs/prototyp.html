@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Michael Mäder, Life Tool</title>
+<style>
+  .viz-root {
+    color-scheme: light;
+    --surface-1:      #ffffff;
+    --page-plane:     #f6f6f3;
+    --text-primary:   #0b0b0b;
+    --text-secondary: #6b6a66;
+    --text-muted:     #a4a29c;
+    --gridline:       #ebeae6;
+    --brand:          #7ED321;
+    --brand-dark:     #5CA818;
+    --brand-wash:     #eef8dd;
+    --black:          #0d0d0d;
+    --dot-critical:   #d03b3b;
+    --dot-warning:    #c98500;
+    --dot-good:       #0a7d0a;
+    --dot-neutral:    #c3c2b7;
+    --wash-critical:  #fbe9e8;
+    --wash-warning:   #faf1dc;
+    --wash-good:      #e6f4e0;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--page-plane);
+    color: var(--text-primary);
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+  .app { display: flex; min-height: 100vh; }
+
+  /* ---------- Sidebar ---------- */
+  nav {
+    width: 220px;
+    flex-shrink: 0;
+    background: var(--black);
+    background-image: radial-gradient(circle at 15% 0%, rgba(126,211,33,0.16), transparent 55%);
+    padding: 24px 0;
+  }
+  nav .wordmark {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    padding: 0 20px 20px;
+    margin-bottom: 10px;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+  }
+  nav .wordmark .mark {
+    width: 26px; height: 26px; border-radius: 8px;
+    background: linear-gradient(145deg, var(--brand), var(--brand-dark));
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 800; font-size: 13px; color: var(--black);
+    flex-shrink: 0;
+  }
+  nav .wordmark .name { color: white; font-size: 13.5px; font-weight: 700; letter-spacing: 0.2px; }
+  nav .navitem {
+    display: flex; align-items: center; gap: 10px;
+    width: 100%; text-align: left; background: none; border: none;
+    color: #9a9a96; font-size: 13px; padding: 10px 20px; cursor: pointer;
+    font-family: inherit; border-left: 2px solid transparent;
+    transition: background 0.15s ease, color 0.15s ease;
+    white-space: nowrap;
+  }
+  nav .navitem .ico {
+    width: 18px; height: 18px; border-radius: 5px; flex-shrink: 0;
+    background: rgba(255,255,255,0.08);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 10.5px;
+  }
+  nav .navitem:hover { color: white; background: rgba(255,255,255,0.03); }
+  nav .navitem.active { color: white; border-left: 2px solid var(--brand); background: rgba(126,211,33,0.08); font-weight: 600; }
+  nav .navitem.active .ico { background: var(--brand); color: var(--black); }
+  nav .navgroup-label {
+    color: #6b6b68; font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.6px;
+    padding: 18px 20px 6px;
+  }
+
+  main { flex: 1; padding: 40px 48px 80px; max-width: 760px; }
+
+  /* ---------- Hero header ---------- */
+  .hero {
+    display: flex; justify-content: space-between; align-items: flex-end;
+    margin-bottom: 26px;
+    padding-bottom: 20px;
+    border-bottom: 2px solid var(--black);
+  }
+  .hero .eyebrow { color: var(--text-muted); font-size: 12.5px; margin-bottom: 4px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+  .hero .page-title { font-size: 26px; font-weight: 800; margin: 0; letter-spacing: -0.3px; }
+  .hero .badge {
+    background: var(--brand-wash); color: var(--brand-dark); font-weight: 700; font-size: 12px;
+    padding: 5px 12px; border-radius: 20px; white-space: nowrap;
+  }
+
+  /* ---------- Stat strip ---------- */
+  .stat-strip { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 30px; }
+  .stat-pill {
+    background: var(--surface-1); border-radius: 12px; padding: 14px 16px;
+    box-shadow: 0 1px 2px rgba(11,11,11,0.04), 0 1px 0 var(--gridline);
+    position: relative; overflow: hidden;
+  }
+  .stat-pill::before {
+    content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 3px;
+    background: var(--accent, var(--brand));
+  }
+  .stat-pill .n { font-size: 24px; font-weight: 800; line-height: 1.1; }
+  .stat-pill .l { font-size: 11.5px; color: var(--text-secondary); margin-top: 3px; font-weight: 600; }
+
+  /* ---------- Priority list (Heute) ---------- */
+  .priority-list {
+    display: flex; flex-direction: column; margin-bottom: 34px;
+    background: var(--surface-1); border-radius: 14px;
+    box-shadow: 0 1px 2px rgba(11,11,11,0.04), 0 1px 0 var(--gridline);
+    overflow: hidden;
+  }
+  .prow {
+    display: flex; align-items: center; gap: 13px;
+    padding: 14px 18px; border-bottom: 1px solid var(--gridline);
+  }
+  .prow:last-child { border-bottom: none; }
+  .prow .swatch {
+    width: 34px; height: 34px; border-radius: 9px; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 15px;
+  }
+  .prow .swatch.critical { background: var(--wash-critical); }
+  .prow .swatch.warning  { background: var(--wash-warning); }
+  .prow .swatch.neutral  { background: var(--brand-wash); }
+  .prow .body { flex: 1; min-width: 0; }
+  .prow .body strong { display: block; font-size: 14.5px; font-weight: 700; }
+  .prow .body span { font-size: 12.5px; color: var(--text-secondary); }
+  .prow .source {
+    font-size: 11px; font-weight: 700; color: var(--text-secondary);
+    flex-shrink: 0; white-space: nowrap;
+    background: var(--page-plane); padding: 4px 10px; border-radius: 20px;
+  }
+
+  .section-label {
+    font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px;
+    color: var(--text-primary); margin: 0 0 12px;
+    display: flex; align-items: center; gap: 7px;
+  }
+  .section-label::before {
+    content: ""; width: 10px; height: 3px; border-radius: 2px; background: var(--brand);
+  }
+
+  /* ---------- Simple list rows (other pages) ---------- */
+  .simple-list {
+    display: flex; flex-direction: column;
+    background: var(--surface-1); border-radius: 14px;
+    box-shadow: 0 1px 2px rgba(11,11,11,0.04), 0 1px 0 var(--gridline);
+    overflow: hidden;
+  }
+  .srow {
+    display: flex; justify-content: space-between; align-items: center; gap: 14px;
+    padding: 15px 18px; border-bottom: 1px solid var(--gridline);
+  }
+  .srow:last-child { border-bottom: none; }
+  .srow .main strong { display: block; font-size: 14.5px; font-weight: 700; }
+  .srow .main span { font-size: 12.5px; color: var(--text-secondary); }
+  .srow .right {
+    font-size: 11.5px; font-weight: 700; color: var(--text-secondary); white-space: nowrap; text-align: right;
+    background: var(--page-plane); padding: 4px 10px; border-radius: 20px;
+  }
+  .srow .right.warning { color: #8a5c00; background: var(--wash-warning); }
+  .srow .right.critical { color: #a72d2d; background: var(--wash-critical); }
+  .srow .right.good { color: #0a7d0a; background: var(--wash-good); }
+
+  .timeline {
+    display: flex; flex-direction: column; margin-bottom: 34px;
+    background: var(--surface-1); border-radius: 14px;
+    box-shadow: 0 1px 2px rgba(11,11,11,0.04), 0 1px 0 var(--gridline);
+    padding: 6px 18px;
+  }
+  .trow { display: flex; gap: 16px; padding: 10px 0; border-bottom: 1px solid var(--gridline); }
+  .trow:last-child { border-bottom: none; }
+  .trow .t { font-variant-numeric: tabular-nums; font-weight: 700; font-size: 13px; width: 48px; flex-shrink: 0; color: var(--brand-dark); }
+  .trow .l { font-size: 13.5px; font-weight: 500; }
+  .trow.protected .t { color: var(--text-muted); }
+  .trow.protected .l { color: var(--text-muted); }
+
+  .note { font-size: 12px; color: var(--text-muted); margin-top: 10px; }
+
+  .chip-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .chip {
+    display: flex; align-items: center; gap: 12px;
+    border: none; border-radius: 12px; padding: 16px;
+    background: var(--surface-1); cursor: pointer; text-align: left; font-family: inherit;
+    box-shadow: 0 1px 2px rgba(11,11,11,0.04), 0 1px 0 var(--gridline);
+    transition: transform 0.12s ease, box-shadow 0.12s ease;
+  }
+  .chip:hover { transform: translateY(-1px); box-shadow: 0 4px 10px rgba(11,11,11,0.08); }
+  .chip .ico {
+    width: 34px; height: 34px; border-radius: 9px; flex-shrink: 0;
+    background: var(--brand-wash); color: var(--brand-dark);
+    display: flex; align-items: center; justify-content: center; font-size: 16px;
+  }
+  .chip strong { display: block; font-size: 13.5px; margin-bottom: 2px; }
+  .chip span { font-size: 11.5px; color: var(--text-secondary); }
+
+  .footnote { font-size: 11.5px; color: var(--text-muted); margin-top: 30px; }
+
+  .back-btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: none; border: none; cursor: pointer; font-family: inherit;
+    font-size: 12.5px; font-weight: 700; color: var(--text-secondary);
+    padding: 0; margin-bottom: 14px;
+  }
+  .back-btn:hover { color: var(--text-primary); }
+
+  @media (max-width: 700px) {
+    .app { flex-direction: column; }
+    nav { width: 100%; }
+    main { padding: 24px; }
+    .chip-grid { grid-template-columns: 1fr; }
+    .stat-strip { grid-template-columns: 1fr; }
+    .hero { flex-direction: column; align-items: flex-start; gap: 10px; }
+  }
+</style>
+</head>
+<body>
+<div class="viz-root">
+<div class="app">
+
+  <nav>
+    <div class="wordmark"><span class="mark">M</span><span class="name">Michael Mäder</span></div>
+    <button class="navitem active" data-target="heute"><span class="ico">☀</span>Heute</button>
+    <button class="navitem" data-target="postfach"><span class="ico">✉</span>Postfach & Kalender</button>
+    <button class="navitem" data-target="aufgaben"><span class="ico">✓</span>Aufgaben & Team</button>
+    <button class="navitem" data-target="finanzen"><span class="ico">€</span>Finanzen</button>
+    <button class="navitem" data-target="nachrichten"><span class="ico">◎</span>Nachrichten</button>
+    <div class="navgroup-label">Weitere Bereiche</div>
+    <button class="navitem" data-target="mehr"><span class="ico">⋯</span>Mehr</button>
+  </nav>
+
+  <main>
+
+    <!-- HEUTE -->
+    <div class="page" id="page-heute">
+      <div class="hero">
+        <div>
+          <div class="eyebrow">Dienstag, 18. August · 7:30 Uhr</div>
+          <div class="page-title">Guten Morgen, Michael</div>
+        </div>
+        <span class="badge">5 offene Punkte</span>
+      </div>
+
+      <div class="stat-strip">
+        <div class="stat-pill" style="--accent:#d03b3b"><div class="n">2</div><div class="l">Kritisch</div></div>
+        <div class="stat-pill" style="--accent:#c98500"><div class="n">3</div><div class="l">Braucht Aufmerksamkeit</div></div>
+        <div class="stat-pill" style="--accent:#7ED321"><div class="n">4</div><div class="l">Termine heute</div></div>
+      </div>
+
+      <div class="section-label">Wichtig heute</div>
+      <div class="priority-list">
+        <div class="prow">
+          <span class="swatch critical">✉</span>
+          <div class="body"><strong>Presseanfrage, Fitness Magazin</strong><span>Seit 3 Tagen unbeantwortet, Interview zum Franchise-Wachstum</span></div>
+          <span class="source">Mail</span>
+        </div>
+        <div class="prow">
+          <span class="swatch critical">✓</span>
+          <div class="body"><strong>Vertrag Studio Wertheim gegenlesen</strong><span>Eigene Aufgabe, fällig heute</span></div>
+          <span class="source">Aufgabe</span>
+        </div>
+        <div class="prow">
+          <span class="swatch warning">✉</span>
+          <div class="body"><strong>Investor Update, XY Capital</strong><span>Bittet um kurze Rückmeldung zum Quartalsbericht</span></div>
+          <span class="source">Mail</span>
+        </div>
+        <div class="prow">
+          <span class="swatch warning">◎</span>
+          <div class="body"><strong>Boris</strong><span>Sprachnachricht 1:30 Min, schlägt Termin für Studio-Eröffnung Wertheim vor</span></div>
+          <span class="source">WhatsApp</span>
+        </div>
+        <div class="prow">
+          <span class="swatch warning">☺</span>
+          <div class="body"><strong>Angebot Community Event freigeben</strong><span>An Emily delegiert, seit 4 Tagen offen</span></div>
+          <span class="source">Team</span>
+        </div>
+      </div>
+
+      <div class="section-label">Termine heute</div>
+      <div class="timeline">
+        <div class="trow"><span class="t">9:30</span><span class="l">Abstimmung Studioleitung Nord</span></div>
+        <div class="trow"><span class="t">11:00</span><span class="l">Call mit Berater, FNZ Bank</span></div>
+        <div class="trow protected"><span class="t">13:00</span><span class="l">Pause, automatisch geschützt</span></div>
+        <div class="trow"><span class="t">15:00</span><span class="l">Rückruf, Fitness Magazin</span></div>
+      </div>
+      <div class="note">Keine Termine vor 9 oder nach 16 Uhr, freitags bewusst weniger geplant.</div>
+
+      <div class="footnote">Prototyp mit Beispieldaten.</div>
+    </div>
+
+    <!-- POSTFACH & KALENDER -->
+    <div class="page" id="page-postfach" style="display:none;">
+      <div class="hero">
+        <div>
+          <div class="eyebrow">Outlook, mm@easyfitness-group.com</div>
+          <div class="page-title">Postfach & Kalender</div>
+        </div>
+      </div>
+
+      <div class="section-label">Postfach</div>
+      <div class="simple-list">
+        <div class="srow"><div class="main"><strong>Presseanfrage, Fitness Magazin</strong><span>Interview zum Franchise-Wachstum</span></div><span class="right critical">3 Tage offen</span></div>
+        <div class="srow"><div class="main"><strong>Investor Update, XY Capital</strong><span>Rückmeldung zum Quartalsbericht</span></div><span class="right warning">Heute fällig</span></div>
+        <div class="srow"><div class="main"><strong>Kooperationsanfrage, Sportmarke</strong><span>Antwortentwurf liegt bereit</span></div><span class="right good">Entwurf bereit</span></div>
+        <div class="srow"><div class="main"><strong>Rückfrage Buchhaltung</strong><span>Beleg Reisekosten August fehlt</span></div><span class="right">Neu</span></div>
+      </div>
+
+      <div class="section-label" style="margin-top:28px;">Kalender, diese Woche</div>
+      <div class="timeline">
+        <div class="trow"><span class="t">Mo 9:30</span><span class="l">Abstimmung Studioleitung Nord</span></div>
+        <div class="trow"><span class="t">Di 11:00</span><span class="l">Call mit Berater, FNZ Bank</span></div>
+        <div class="trow"><span class="t">Mi 10:00</span><span class="l">Interview-Vorbereitung</span></div>
+        <div class="trow protected"><span class="t">Fr</span><span class="l">Bewusst frei gehalten</span></div>
+      </div>
+      <div class="note">Automatischer Terminvorschlag hält sich an 9 bis 16 Uhr, Freitag reduziert.</div>
+    </div>
+
+    <!-- AUFGABEN & TEAM -->
+    <div class="page" id="page-aufgaben" style="display:none;">
+      <div class="hero">
+        <div>
+          <div class="eyebrow">Microsoft To Do & Delegations-Tracker</div>
+          <div class="page-title">Aufgaben & Team</div>
+        </div>
+      </div>
+      <div class="simple-list">
+        <div class="srow"><div class="main"><strong>Vertrag Studio Wertheim gegenlesen</strong><span>Eigene Aufgabe</span></div><span class="right critical">Fällig heute</span></div>
+        <div class="srow"><div class="main"><strong>Angebot Community Event freigeben</strong><span>Delegiert an Emily</span></div><span class="right warning">Seit 4 Tagen offen</span></div>
+        <div class="srow"><div class="main"><strong>Reisebuchung Dubai bestätigen</strong><span>Delegiert an Emily</span></div><span class="right good">Erledigt gestern</span></div>
+      </div>
+      <div class="note">Erinnert automatisch, wenn eine delegierte Aufgabe länger offen bleibt.</div>
+    </div>
+
+    <!-- FINANZEN -->
+    <div class="page" id="page-finanzen" style="display:none;">
+      <div class="hero">
+        <div>
+          <div class="eyebrow">Revolut, FNZ Bank, Bitpanda</div>
+          <div class="page-title">Finanzen</div>
+        </div>
+      </div>
+      <div class="simple-list">
+        <div class="srow"><div class="main"><strong>Gesamtvermögen</strong><span>Wird nach erstem manuellem Update angezeigt</span></div><span class="right">–</span></div>
+        <div class="srow"><div class="main"><strong>Belege fürs Finanzamt</strong><span>Papier über OneDrive, Mail automatisch erkannt</span></div><span class="right">läuft</span></div>
+      </div>
+      <div class="note">Keine automatische Anbindung bei diesen Anbietern verfügbar, Werte werden regelmäßig manuell aktualisiert.</div>
+    </div>
+
+    <!-- NACHRICHTEN (WhatsApp) -->
+    <div class="page" id="page-nachrichten" style="display:none;">
+      <div class="hero">
+        <div>
+          <div class="eyebrow">WhatsApp, separater Assistenten-Chat</div>
+          <div class="page-title">Nachrichten</div>
+        </div>
+      </div>
+      <div class="simple-list">
+        <div class="srow"><div class="main"><strong>Boris</strong><span>1:30 Min, schlägt Termin für Studio-Eröffnung Wertheim vor, bittet um Rückruf bis Freitag</span></div><span class="right">antworten →</span></div>
+        <div class="srow"><div class="main"><strong>Manfred</strong><span>0:45 Min, Rückfrage zur Lieferung neuer Geräte, braucht kurze Bestätigung</span></div><span class="right">antworten →</span></div>
+      </div>
+      <div class="note">Noch nicht live, Meta Business Zugang und Coexistence-Einrichtung stehen aus.</div>
+    </div>
+
+    <!-- MEHR -->
+    <div class="page" id="page-mehr" style="display:none;">
+      <div class="hero">
+        <div>
+          <div class="eyebrow">Seltener gebraucht, aber alles an einem Ort</div>
+          <div class="page-title">Mehr</div>
+        </div>
+      </div>
+      <div class="chip-grid">
+        <button class="chip" data-target="content"><span class="ico">◐</span><span><strong>Content & Social Media</strong><span>Instagram, Content-Kalender</span></span></button>
+        <button class="chip" data-target="netzwerk"><span class="ico">◈</span><span><strong>Netzwerk & Kontakte</strong><span>Wichtige Kontakte, Geburtstage</span></span></button>
+        <button class="chip" data-target="familie"><span class="ico">♥</span><span><strong>Familie & Privates</strong><span>Familienkalender, Geschenkideen</span></span></button>
+        <button class="chip" data-target="haushalt"><span class="ico">⌂</span><span><strong>Haushalt & Abos</strong><span>Rechnungen, Zahlungsfristen</span></span></button>
+        <button class="chip" data-target="reisen"><span class="ico">✈</span><span><strong>Reisen</strong><span>Unterlagen, Bonusprogramme</span></span></button>
+        <button class="chip" data-target="marke"><span class="ico">★</span><span><strong>Persönliche Marke</strong><span>Presseanfragen, Kernbotschaften</span></span></button>
+        <button class="chip" data-target="wissen"><span class="ico">◆</span><span><strong>Wissen & Branche</strong><span>Branchennews kompakt</span></span></button>
+        <button class="chip" data-target="sicherheit"><span class="ico">⛨</span><span><strong>Sicherheit & Vorsorge</strong><span>Datenleck-Check, Notfallordner</span></span></button>
+      </div>
+    </div>
+
+    <div class="page" id="page-content" style="display:none;">
+      <button class="back-btn" data-target="mehr">← Mehr</button>
+      <div class="hero"><div><div class="eyebrow">Instagram: michaelmaeder_ · 1-2x pro Woche</div><div class="page-title">Content & Social Media</div></div></div>
+      <div class="simple-list">
+        <div class="srow"><div class="main"><strong>Reel, "Ein Tag als Gründer"</strong><span>Entwurf bereit</span></div><span class="right warning">Zur Freigabe</span></div>
+        <div class="srow"><div class="main"><strong>Post, Studio-Eröffnung Wertheim</strong><span>Idee vorgeschlagen</span></div><span class="right">Idee</span></div>
+      </div>
+    </div>
+
+    <div class="page" id="page-netzwerk" style="display:none;">
+      <button class="back-btn" data-target="mehr">← Mehr</button>
+      <div class="hero"><div><div class="eyebrow">Quelle: iPhone-Kontakte</div><div class="page-title">Netzwerk & Kontakte</div></div></div>
+      <div class="simple-list">
+        <div class="srow"><div class="main"><strong>Sarah Weber, Investorin</strong><span>Kein Kontakt seit 3 Wochen</span></div><span class="right warning">Nachfassen</span></div>
+        <div class="srow"><div class="main"><strong>Boris</strong><span>Letzter Kontakt heute</span></div><span class="right">–</span></div>
+      </div>
+    </div>
+
+    <div class="page" id="page-familie" style="display:none;">
+      <button class="back-btn" data-target="mehr">← Mehr</button>
+      <div class="hero"><div><div class="eyebrow">Fokus: Geburtstage, Geschenkideen</div><div class="page-title">Familie & Privates</div></div></div>
+      <div class="simple-list">
+        <div class="srow"><div class="main"><strong>Noch keine Termine hinterlegt</strong><span>Wird ergänzt, sobald Geburtstage übermittelt sind</span></div><span class="right">offen</span></div>
+      </div>
+    </div>
+
+    <div class="page" id="page-haushalt" style="display:none;">
+      <button class="back-btn" data-target="mehr">← Mehr</button>
+      <div class="hero"><div><div class="eyebrow">Rechnungen aus Mail und Papier (OneDrive)</div><div class="page-title">Haushalt & Abos</div></div></div>
+      <div class="simple-list">
+        <div class="srow"><div class="main"><strong>Studio-Versicherung, Rechnung 4471</strong><span>Zahlungsfrist</span></div><span class="right warning">In 5 Tagen fällig</span></div>
+      </div>
+    </div>
+
+    <div class="page" id="page-reisen" style="display:none;">
+      <button class="back-btn" data-target="mehr">← Mehr</button>
+      <div class="hero"><div><div class="eyebrow">Unterlagen in OneDrive · Emirates</div><div class="page-title">Reisen</div></div></div>
+      <div class="simple-list">
+        <div class="srow"><div class="main"><strong>Noch keine Reise hinterlegt</strong><span>Wird automatisch erkannt, sobald Buchungsmails eintreffen</span></div><span class="right">offen</span></div>
+      </div>
+    </div>
+
+    <div class="page" id="page-marke" style="display:none;">
+      <button class="back-btn" data-target="mehr">← Mehr</button>
+      <div class="hero"><div><div class="eyebrow">Geschäftsführer Easy Fitness Holding GmbH</div><div class="page-title">Persönliche Marke</div></div></div>
+      <div class="simple-list">
+        <div class="srow"><div class="main"><strong>Presseanfrage, Fitness Magazin</strong><span>Interview zum Franchise-Wachstum</span></div><span class="right critical">3 Tage offen</span></div>
+      </div>
+    </div>
+
+    <div class="page" id="page-wissen" style="display:none;">
+      <button class="back-btn" data-target="mehr">← Mehr</button>
+      <div class="hero"><div><div class="eyebrow">Fokus: Fitnessbranche allgemein</div><div class="page-title">Wissen & Branche</div></div></div>
+      <div class="simple-list">
+        <div class="srow"><div class="main"><strong>Fitnessstudio-Markt wächst im Franchise-Bereich</strong><span>Beispiel, echte Quelle folgt</span></div></div>
+      </div>
+    </div>
+
+    <div class="page" id="page-sicherheit" style="display:none;">
+      <button class="back-btn" data-target="mehr">← Mehr</button>
+      <div class="hero"><div><div class="eyebrow">Datenleck-Check & Notfallordner</div><div class="page-title">Sicherheit & Vorsorge</div></div></div>
+      <div class="simple-list">
+        <div class="srow"><div class="main"><strong>3 Adressen im Check</strong><span>easyfitness@gmx.de, mm@easyfitness-group.com, michaelmaeder@me.com</span></div><span class="right">geplant</span></div>
+        <div class="srow"><div class="main"><strong>Notfallordner</strong><span>SecureSafe & OneDrive, bereits vorhanden</span></div><span class="right good">vorhanden</span></div>
+      </div>
+    </div>
+
+  </main>
+</div>
+</div>
+
+<script>
+  const pages = document.querySelectorAll('.page');
+
+  function goTo(target) {
+    document.querySelectorAll('.navitem').forEach(b => b.classList.remove('active'));
+    const topNav = document.querySelector('.navitem[data-target="' + target + '"]');
+    if (topNav) topNav.classList.add('active');
+    else document.querySelector('.navitem[data-target="mehr"]').classList.add('active');
+    pages.forEach(p => p.style.display = 'none');
+    document.getElementById('page-' + target).style.display = 'block';
+    window.scrollTo(0, 0);
+  }
+
+  document.querySelectorAll('.navitem, .chip, .back-btn').forEach(btn => {
+    btn.addEventListener('click', () => goTo(btn.getAttribute('data-target')));
+  });
+</script>
+
+</body>
+</html>
