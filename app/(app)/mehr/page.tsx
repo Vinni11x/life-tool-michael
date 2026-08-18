@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { BEREICHE } from "@/lib/bereiche";
 import { Hero } from "@/components/ui";
+import Abmelden from "@/components/Abmelden";
 
 export default function Seite() {
   return (
@@ -23,6 +24,11 @@ export default function Seite() {
             </span>
           </Link>
         ))}
+      </div>
+
+      {/* Auf dem Handy ist die Seitenleiste eine Reiterleiste ohne Platz zum Abmelden. */}
+      <div style={{ marginTop: 26 }}>
+        <Abmelden />
       </div>
     </>
   );

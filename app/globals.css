@@ -292,11 +292,70 @@ main { flex: 1; padding: 40px 48px 80px; max-width: 860px; }
 .login-card h1 { font-size: 20px; font-weight: 800; margin: 0 0 4px; }
 .login-card p.sub { font-size: 13px; color: var(--text-secondary); margin: 0 0 22px; }
 
+/* Kurzform der Beschriftung, nur in der Handy-Leiste sichtbar. */
+.navitem .kurz { display: none; }
+
 @media (max-width: 760px) {
   .app { flex-direction: column; }
-  nav.sidebar { width: 100%; }
-  main { padding: 24px; }
+
+  /* Die Seitenleiste wird zur Reiterleiste am unteren Rand, wie in einer App. */
+  nav.sidebar {
+    position: fixed; z-index: 20;
+    left: 0; right: 0; bottom: 0; width: auto;
+    flex-direction: row; align-items: stretch;
+    padding: 4px 2px calc(4px + env(safe-area-inset-bottom));
+    border-top: 1px solid rgba(255,255,255,0.08);
+  }
+  nav.sidebar .wordmark,
+  nav.sidebar .navgroup-label,
+  nav.sidebar .spacer,
+  nav.sidebar .logout { display: none; }
+  nav.sidebar .navitem {
+    flex: 1; min-width: 0; min-height: 54px;
+    flex-direction: column; justify-content: center; align-items: center;
+    gap: 3px; padding: 6px 2px; font-size: 9.5px; text-align: center;
+    border-left: none;
+  }
+  nav.sidebar .navitem .lang { display: none; }
+  nav.sidebar .navitem .kurz { display: inline; }
+  nav.sidebar .navitem .ico { width: 22px; height: 22px; font-size: 12px; }
+  nav.sidebar .navitem.active { border-left: none; background: transparent; }
+
+  main { padding: 20px 16px 90px; }
+
+  .hero { flex-direction: column; align-items: flex-start; gap: 10px; padding-bottom: 16px; }
+  .hero .page-title { font-size: 22px; }
+
   .chip-grid, .formgrid { grid-template-columns: 1fr; }
-  .stat-strip { grid-template-columns: 1fr; }
-  .hero { flex-direction: column; align-items: flex-start; gap: 10px; }
+  .stat-strip { grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .stat-pill { padding: 12px 10px; }
+  .stat-pill .n { font-size: 20px; }
+  .stat-pill .l { font-size: 10.5px; }
+
+  /* Zeilen brechen um, damit die Knöpfe volle Daumenbreite bekommen. */
+  .srow { flex-wrap: wrap; padding: 14px 14px; row-gap: 10px; }
+  .srow .main { flex: 1 1 100%; order: 1; }
+  .srow .check { order: 0; }
+  .srow .right-group { order: 2; flex: 1 1 100%; flex-wrap: wrap; justify-content: flex-start; }
+
+  .prow { padding: 13px 14px; }
+  .prow .source { display: none; }
+
+  .check { width: 30px; height: 30px; border-radius: 9px; font-size: 15px; }
+  .icon-btn { padding: 9px 12px; font-size: 12.5px; background: var(--page-plane); }
+
+  .toolbar { flex-direction: column; align-items: stretch; gap: 10px; }
+  .toolbar .btn { width: 100%; }
+  .btn { min-height: 44px; padding: 11px 16px; }
+
+  .formcard { padding: 14px; }
+  /* 16px verhindert, dass iOS beim Tippen in ein Feld hineinzoomt. */
+  .field input, .field select, .field textarea { font-size: 16px; padding: 11px 12px; }
+  .formactions .btn { flex: 1; }
+
+  .trow { flex-wrap: wrap; row-gap: 6px; }
+  .trow .l { flex: 1 1 auto; }
+  .trow .icon-btn { margin-left: auto; }
+
+  .timeline { padding: 4px 14px; }
 }
